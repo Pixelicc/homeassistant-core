@@ -1,0 +1,27 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This currency pair has already been configured.",
+      "cannot_connect": "Failed to connect to the Frankfurter Currency API."
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Frankfurter Currency API.",
+      "same_currency": "Base and target currency cannot be the same.",
+      "unknown": "Unexpected Error"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "base": "Base Currency",
+          "target": "Target Currency"
+        },
+        "data_description": {
+          "base": "The currency you want to convert from.",
+          "target": "The currency you want to convert to."
+        },
+        "description": "Select the base and target currency.",
+        "title": "Set up Frankfurter Currency API"
+      }
+    }
+  }
+}
