@@ -653,6 +653,9 @@ bleak-esphome==3.9.4
 # homeassistant.components.bluetooth
 bleak-retry-connector==4.6.1
 
+# homeassistant.components.smlight
+bleak-smlight==1.1.0
+
 # homeassistant.components.bluetooth
 bleak==3.0.2
 
@@ -1314,7 +1317,7 @@ ibeacon-ble==1.2.0
 # homeassistant.components.local_calendar
 # homeassistant.components.local_todo
 # homeassistant.components.remote_calendar
-ical==13.2.5
+ical==13.3.0
 
 # homeassistant.components.caldav
 icalendar==6.3.1
@@ -3132,7 +3135,7 @@ tellcore-py==1.1.3
 tellduslive==0.10.12
 
 # homeassistant.components.teltonika
-teltasync==0.3.1
+teltasync==0.4.0
 
 # homeassistant.components.lg_soundbar
 temescal==0.5
@@ -3313,7 +3316,7 @@ volkszaehler==0.4.0
 volvocarsapi==0.4.3
 
 # homeassistant.components.verisure
-vsure==2.7.1
+vsure==2.8.0
 
 # homeassistant.components.vasttrafik
 vtjp==0.2.1
