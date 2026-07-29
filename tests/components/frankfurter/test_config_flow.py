@@ -1,6 +1,6 @@
 """Test the Frankfurter config flow."""
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from homeassistant import config_entries
 from homeassistant.components.frankfurter.const import DOMAIN
@@ -8,29 +8,30 @@ from homeassistant.const import CONF_BASE, CONF_TARGET
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from tests.test_util.aiohttp import AiohttpClientMocker
 
-
-async def test_form(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker) -> None:
+async def test_form(hass: HomeAssistant) -> None:
     """Test integration form."""
-    aioclient_mock.get(
-        "https://api.frankfurter.dev/v2/currencies",
-        json=[
-            {"iso_code": "EUR", "name": "Euro"},
-            {"iso_code": "USD", "name": "US Dollar"},
-        ],
-    )
+    with (
+        patch(
+            "homeassistant.components.frankfurter.config_flow.FrankfurterAPI.get_currencies",
+            new=AsyncMock(
+                return_value=[
+                    {"iso_code": "EUR", "name": "Euro"},
+                    {"iso_code": "USD", "name": "United States Dollar"},
+                ]
+            ),
+        ),
+        patch(
+            "homeassistant.components.frankfurter.async_setup_entry",
+            return_value=True,
+        ) as mock_setup_entry,
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
+        assert result["type"] is FlowResultType.FORM
+        assert result["errors"] == {}
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {}
-
-    with patch(
-        "homeassistant.components.frankfurter.async_setup_entry",
-        return_value=True,
-    ) as mock_setup_entry:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {
@@ -49,38 +50,34 @@ async def test_form(hass: HomeAssistant, aioclient_mock: AiohttpClientMocker) ->
     assert len(mock_setup_entry.mock_calls) == 1
 
 
-async def test_form_cannot_connect(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
-) -> None:
+async def test_form_cannot_connect(hass: HomeAssistant) -> None:
     """Test handling of connection errors."""
-    aioclient_mock.get(
-        "https://api.frankfurter.dev/v2/currencies",
-        status=500,
-    )
-
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
+    with patch(
+        "homeassistant.components.frankfurter.config_flow.FrankfurterAPI.get_currencies",
+        new=AsyncMock(side_effect=Exception("HTTP Error 500")),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "cannot_connect"
 
 
-async def test_form_same_currency(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
-) -> None:
+async def test_form_same_currency(hass: HomeAssistant) -> None:
     """Test handling of same currency error."""
-    aioclient_mock.get(
-        "https://api.frankfurter.dev/v2/currencies",
-        json=[
-            {"iso_code": "EUR", "name": "Euro"},
-            {"iso_code": "USD", "name": "US Dollar"},
-        ],
-    )
-
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
+    with patch(
+        "homeassistant.components.frankfurter.config_flow.FrankfurterAPI.get_currencies",
+        new=AsyncMock(
+            return_value=[
+                {"iso_code": "EUR", "name": "Euro"},
+                {"iso_code": "USD", "name": "United States Dollar"},
+            ]
+        ),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
     assert result["type"] is FlowResultType.FORM
 
     result = await hass.config_entries.flow.async_configure(
@@ -95,18 +92,15 @@ async def test_form_same_currency(
     assert result["errors"] == {"base": "same_currency"}
 
 
-async def test_form_exception(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
-) -> None:
+async def test_form_exception(hass: HomeAssistant) -> None:
     """Test handling of exceptions."""
-    aioclient_mock.get(
-        "https://api.frankfurter.dev/v2/currencies",
-        exc=Exception,
-    )
-
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
+    with patch(
+        "homeassistant.components.frankfurter.config_flow.FrankfurterAPI.get_currencies",
+        new=AsyncMock(side_effect=Exception),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}
+        )
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "cannot_connect"

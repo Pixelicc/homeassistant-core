@@ -3,13 +3,13 @@
 import logging
 from typing import Any, override
 
+from frankfurter_api import FrankfurterAPI
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_BASE, CONF_TARGET
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import API_PATH_CURRENCIES, DOMAIN
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ class FrankfurterConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the config flow."""
+        self._api = FrankfurterAPI()
         self._currencies: dict[str, str] = {}
 
     @override
@@ -32,16 +33,11 @@ class FrankfurterConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if not self._currencies:
             try:
-                session = async_get_clientsession(self.hass)
-                async with session.get(API_PATH_CURRENCIES) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        self._currencies = {
-                            item["iso_code"]: f"{item['name']} ({item['iso_code']})"
-                            for item in data
-                        }
-                    else:
-                        return self.async_abort(reason="cannot_connect")
+                data = await self._api.get_currencies()
+                self._currencies = {
+                    item["iso_code"]: f"{item['name']} ({item['iso_code']})"
+                    for item in data
+                }
             except Exception:
                 _LOGGER.exception("Failed to fetch currencies")
                 return self.async_abort(reason="cannot_connect")
